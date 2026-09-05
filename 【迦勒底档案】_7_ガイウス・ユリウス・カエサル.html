@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>【迦勒底双核档案】#7 ガイウス・ユリウス・カエサル</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700;900&display=swap');
+        :root {
+            --tm-gold: #c2a67e; --tm-gold-bright: #f3d7b0; --tm-bg-dark: #0c0a0f;
+            --tm-card-bg: #16131c; --tm-card-inner: #221d2a; --tm-border: #383142;
+            --tm-text: #eae3d9; --tm-text-sub: #9e9185;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--tm-bg-dark); color: var(--tm-text); font-family: 'Noto Sans JP', sans-serif; display: flex; justify-content: center; padding: 20px 10px; min-height: 100vh; }
+        .archive-shell { width: 100%; max-width: 880px; background: #131017; border: 1.5px solid var(--tm-border); border-top: 4px solid var(--tm-gold); border-radius: 8px; box-shadow: 0 16px 50px rgba(0,0,0,0.85); display: flex; flex-direction: column; overflow: hidden; }
+        
+        .hero-banner { position: relative; width: 100%; height: 320px; background: radial-gradient(circle at 70% 30%, #261f30 0%, #0c0a0f 100%); display: flex; align-items: flex-end; padding: 24px 30px; border-bottom: 1.5px solid var(--tm-border); overflow: hidden; }
+        .hero-art { position: absolute; right: 5%; top: -10px; width: 440px; height: 480px; object-fit: contain; z-index: 1; filter: drop-shadow(0 10px 24px rgba(0,0,0,0.9)); transition: opacity 0.3s; }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, #131017 0%, rgba(19,16,23,0.85) 45%, transparent 100%); z-index: 2; }
+        .hero-info { position: relative; z-index: 5; display: flex; flex-direction: column; gap: 4px; }
+        .hero-name { font-size: 32px; font-weight: 700; color: #fff; font-family: 'Noto Serif JP', serif; }
+        .hero-meta { font-size: 12px; color: var(--tm-gold); display: flex; gap: 14px; font-weight: 600; margin-top: 4px; }
+        .asc-nav { margin-top: 10px; display: flex; gap: 6px; }
+        .asc-btn { background: rgba(22,19,28,0.85); border: 1px solid var(--tm-border); color: var(--tm-text-sub); padding: 3px 10px; border-radius: 12px; font-size: 10.5px; cursor: pointer; }
+        .asc-btn.active { background: var(--tm-gold); color: #121011; font-weight: 700; border-color: var(--tm-gold); }
+
+        .tabs-nav { display: flex; background: #16131c; border-bottom: 1.5px solid var(--tm-border); padding: 0 30px; gap: 20px; }
+        .tab-btn { padding: 13px 0; font-size: 13px; font-weight: 700; color: var(--tm-text-sub); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab-btn.active { color: var(--tm-gold-bright); border-bottom-color: var(--tm-gold); }
+
+        .archive-body { padding: 22px 30px; display: flex; flex-direction: column; gap: 20px; }
+        .tab-panel { display: none; flex-direction: column; gap: 16px; }
+        .tab-panel.active { display: flex; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; background: var(--tm-card-bg); border: 1px solid var(--tm-border); border-radius: 8px; padding: 12px; text-align: center; }
+        .stat-k { font-size: 10.5px; color: var(--tm-text-sub); }
+        .stat-v { font-size: 15px; font-weight: 700; color: var(--tm-gold); font-family: 'Noto Serif JP', serif; }
+
+        .section-block { display: flex; flex-direction: column; gap: 10px; }
+        .section-header { font-size: 15px; font-weight: 700; color: var(--tm-gold); display: flex; align-items: center; gap: 8px; border-left: 3.5px solid var(--tm-gold); padding-left: 10px; font-family: 'Noto Serif JP', serif; }
+        .section-content { font-size: 13px; line-height: 1.85; color: #dcd3c7; text-align: justify; background: var(--tm-card-bg); border: 1px solid var(--tm-border); border-radius: 8px; padding: 14px 18px; }
+
+        .infobox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 8px 12px; font-size: 12px; }
+        .info-cell { display: flex; gap: 6px; background: var(--tm-card-inner); padding: 7px 10px; border-radius: 4px; }
+        .info-cell span.k { color: var(--tm-text-sub); min-width: 55px; }
+        .info-cell span.v { color: var(--tm-text); font-weight: 500; }
+
+        .relation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; }
+        .relation-card { background: var(--tm-card-bg); border: 1px solid var(--tm-border); border-radius: 6px; padding: 11px 14px; display: flex; flex-direction: column; gap: 4px; }
+        .relation-name { font-size: 13px; font-weight: 700; color: var(--tm-gold-bright); }
+        .relation-desc { font-size: 12px; line-height: 1.65; color: #ccc; }
+
+        .quote-box { background: rgba(194, 166, 126, 0.05); border: 1px solid var(--tm-border); border-left: 3px solid var(--tm-gold); border-radius: 4px; padding: 10px 14px; margin-bottom: 6px; }
+        .quote-text { font-size: 13px; line-height: 1.7; color: #fff; font-family: 'Noto Serif JP', serif; white-space: pre-wrap; }
+        .quote-note { font-size: 11.5px; color: var(--tm-text-sub); margin-top: 3px; }
+
+        .memo-item { position: relative; padding-left: 18px; font-size: 12.5px; line-height: 1.7; color: #c9bfb3; margin-bottom: 4px; list-style: none; }
+        .memo-item::before { content: '❖'; position: absolute; left: 0; color: var(--tm-gold); font-size: 10px; top: 2px; }
+
+        .interlude-item { background: var(--tm-card-inner); padding: 9px 12px; border-radius: 6px; border-left: 3px solid var(--tm-gold); font-size: 12.5px; margin-bottom: 6px; }
+        .bond-item { background: var(--tm-card-bg); border: 1px solid var(--tm-border); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; }
+        .bond-title { font-size: 12.5px; font-weight: 700; color: var(--tm-gold); margin-bottom: 4px; }
+        .bond-text { font-size: 12px; line-height: 1.75; color: #ccc; white-space: pre-wrap; }
+
+        .audio-item { background: var(--tm-card-bg); border: 1px solid var(--tm-border); border-radius: 6px; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; cursor: pointer; }
+        .audio-item:hover { background: #231e2b; border-color: var(--tm-gold); }
+        .audio-title { font-size: 12.5px; font-weight: 700; color: var(--tm-gold); }
+        .audio-sub { font-size: 11.5px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .play-btn { width: 26px; height: 26px; border-radius: 50%; background: var(--tm-gold); color: #121011; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+<div class="archive-shell">
+    <div class="hero-banner">
+        <img class="hero-art" id="hero-art" src="https://static.atlasacademy.io/JP/CharaGraph/101300/101300a@1.png" alt="">
+        <div class="hero-overlay"></div>
+        <div class="hero-info">
+            <div style="color:#ffd666;font-size:13px;letter-spacing:2px;">★★★</div>
+            <div class="hero-name">#7 ガイウス・ユリウス・カエサル</div>
+            <div class="hero-meta">
+                <span>SABER</span>
+                <span>CV：置鮎龍太郎</span>
+                <span>画师：しまどりる</span>
+            </div>
+            <div class="asc-nav">
+                <button class="asc-btn active" onclick="setAsc(0)">阶段一</button>
+                <button class="asc-btn" onclick="setAsc(1)">阶段二</button>
+                <button class="asc-btn" onclick="setAsc(2)">阶段三</button>
+                <button class="asc-btn" onclick="setAsc(3)">最终再临</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tabs-nav">
+        <div class="tab-btn active" onclick="switchTab('wiki', this)">📖 月姬维基深度考据 (TM-Wiki)</div>
+        <div class="tab-btn" onclick="switchTab('interlude', this)">⚔️ 幕间物语与羁绊 (Atlas)</div>
+        <div class="tab-btn" onclick="switchTab('voice', this)">🎙️ 官方原声试听 (Atlas Audio)</div>
+    </div>
+
+    <div class="archive-body">
+        <div class="tab-panel active" id="panel-wiki">
+            <div class="section-block">
+                <div class="section-header">维基全属性面板</div>
+                <div class="section-content"><div class="infobox-grid"><div class="info-cell"><span class="k">真名:</span><span class="v">ガイウス・ユリウス・カエサル</span></div><div class="info-cell"><span class="k">外国語表記:</span><span class="v">Gaius Julius Caesar</span></div><div class="info-cell"><span class="k">性別:</span><span class="v">男性</span></div><div class="info-cell"><span class="k">身長:</span><span class="v">168cm</span></div><div class="info-cell"><span class="k">体重:</span><span class="v">154kg</span></div><div class="info-cell"><span class="k">好きな物:</span><span class="v">女性、ローマ、世界</span></div><div class="info-cell"><span class="k">苦手な物:</span><span class="v">セイバークラスで召喚される事</span></div><div class="info-cell"><span class="k">出典:</span><span class="v">史実</span></div><div class="info-cell"><span class="k">地域:</span><span class="v">欧州</span></div><div class="info-cell"><span class="k">属性:</span><span class="v">中立・中庸</span></div><div class="info-cell"><span class="k">副属性:</span><span class="v">人</span></div><div class="info-cell"><span class="k">一人称:</span><span class="v">私</span></div><div class="info-cell"><span class="k">二人称:</span><span class="v">貴様</span></div><div class="info-cell"><span class="k">三人称:</span><span class="v">彼・彼女／○○（呼び捨て）&#91;注 1&#93;</span></div><div class="info-cell"><span class="k">声優:</span><span class="v">置鮎龍太郎</span></div><div class="info-cell"><span class="k">デザイン:</span><span class="v">しまどりる</span></div><div class="info-cell"><span class="k">設定作成:</span><span class="v">桜井光</span></div><div class="info-cell"><span class="k">レア度:</span><span class="v">☆3</span></div><div class="info-cell"><span class="k">初登場作品:</span><span class="v">Fate/Grand Order</span></div></div></div>
+            </div>
+            <div class="section-block">
+                <div class="section-header">概要与生平人物像</div>
+                <div class="section-content">[編集 | ソースを編集]<br>「剣士」のサーヴァント。<br><br>略歴<br>『Fate/Grand Order』の第二特異点『永続狂気帝国 セプテム』ではレフ・ライノールによって西暦60年のローマに召喚され、連合ローマ帝国の「皇帝」の一人として行動する。<br>連合ローマ帝国の在り方に歪んだものを感じながらも、自身の願いのために戦う。ガリアを占領し、ネロや主人公らと激突した。<br>敗れながらもネロをローマ皇帝に相応しき美しさと勇気を称えながら消えていった。<br>終局特異点『冠位時間神殿 ソロモン』では冠位時間神殿に召喚され、他のサーヴァント達と共にⅡの座を統括する情報室フラウロスと交戦する。<br>人物<br>赤い服を着た恰幅の良い男性。<br>野心家で権謀術数に優れた食えない男。似た言葉を三回繰り返す癖がある。外見に似合わず好色な色男で、妖精との間にも子を残したと伝えられているほど。女性だけでなくローマも大好き。<br>その言動は不敵で辛辣、時に嫌味にも聞こえるが、悪意を持ったものではなく、彼なりに相手を思ってのものである。<br>……なのだが、口が立つのをいいことに相手を言いくるめようとする傾向が目立ち、その事を相手から追求されても詭弁で誤摩化そうとすることが多い。一言で言うならば、「歩く詐欺マシーン」。<br>セイバーとして召喚され、一兵卒のように前線に投入されることがかなり不本意なようで、ことあるごとに不満をこぼしている。<br>聖杯にかける願いは「クレオパトラと再会して、彼女と息子カエサリオンを認知する」事であり、陰謀よりも一人の女性と一人の息子が彼にとって大切な存在となっている。<br>その事もあってか、サーヴァントになってまで陰謀を繰り広げるのは「面倒」だと考え、無垢な子供相手に雄弁で丸め込もうとしなかった。<br>能力<br>大きな野望と優れた頭脳を持つ、知略・弁舌・扇動の天才。知の冴えと権謀術数なら最強。<br>指揮や政治手腕こそが彼の真価であるため、前線での戦闘には乗り気ではない。しかし、決して戦闘能力が低いわけではなく、見た目とは裏腹に俊敏で、高い剣技の技量を誇っている。<br>霊基第三で手足のように自在に動く大理石の腕、足鎧を身に纏</div>
+            </div>
+            <div class="section-block">
+                <div class="section-header">宝具档案</div>
+                <div class="section-content">[編集 | ソースを編集]<br>黄の死（クロケア・モース）<br>ランク：B+<br>種別：対人宝具<br>レンジ：1～2<br>最大捕捉：1人<br>由来：ブリタニア列王史に登場するカエサルの剣。<br>黄金の剣。真名開放すれば、自動的に命中する初撃の後、幸運の判定を「失敗するまで」行い、連続成功した回数だけ追加攻撃を与えることが可能。<br>超連続攻撃を繰り出すこの宝具は、近接戦闘においてはまさしく見敵必殺といっていい威力を有する。<br>だが、部隊指揮こそが本業であることに加え、生前うっかり敵の盾に突き刺さったまま紛失しかけた彼はあまりこの剣を抜きたがらない。<br>『Grand Order』では「敵単体に超強力な攻撃+スターを獲得<オーバーチャージで効果アップ>」という効果のQuick宝具。<br>強化クエスト2クリア後はランクがB++に上昇。宝具威力倍率が上がり、宝具攻撃前に「自身にHPが少ないほど強化成功率がアップする状態を付与(1ターン)&高確率で攻撃力をアップ(1ターン)<成功し続ける限り最大5回付与>」という効果が追加される。</div>
+            </div>
+            <div class="section-block">
+                <div class="section-header">因缘人物交际网 (人間関係)</div>
+                <div class="relation-grid"><div class="relation-card"><div class="relation-name">◆ ロムルス</div><div class="relation-desc">第二特異点にて「皇帝」の一人として従っていたローマの始祖。</div></div><div class="relation-card"><div class="relation-name">◆ ネロ・クラウディウス</div><div class="relation-desc">遠い子孫であり、第二特異点では剣を交えた正しき当代の皇帝。</div></div><div class="relation-card"><div class="relation-name">◆ マシュ・キリエライト</div><div class="relation-desc">その美しさを気に入ったらしく度々彼女の美しさを言及する。何度かセクハラ発言をした事も。</div></div><div class="relation-card"><div class="relation-name">◆ ダレイオス三世、ファントム・オブ・ジ・オペラ、シュヴァリエ・デオン、荊軻、マルタ</div><div class="relation-desc">『月の女神はお団子の夢を見るか？』や『ほぼ週間 サンタオルタさん』にて成された詐欺の被害者達。特にマルタはお月見とクリスマスで二回も騙された。</div></div><div class="relation-card"><div class="relation-name">◆ カリギュラ</div><div class="relation-desc">『月の女神はお団子の夢を見るか？』で共演した相手。巻き上げたお団子を一緒に食べていた。</div></div><div class="relation-card"><div class="relation-name">◆ ナーサリー・ライム、ジャック・ザ・リッパー</div><div class="relation-desc">『ほぼ週間 サンタオルタさん』で出会った相手。さすがに彼女達相手には詐欺を働くような真似はせず、「自分は偽物であり、後で本物のサンタが来る」とある意味嘘をついた。</div></div><div class="relation-card"><div class="relation-name">◆ アルテラ</div><div class="relation-desc">『チョコレート・レディの空騒ぎ』で言及。口先で言いくるめようとすると問答無用でビームをぶっ放してくるため、相性の悪い相手。</div></div><div class="relation-card"><div class="relation-name">◆ ヴァン・ホーエンハイム・パラケルスス</div><div class="relation-desc">イベント『ダ・ヴィンチと七人の贋作英霊』にて、贋作を利用するべくタッグを組み、主人公達に内緒で贋作者に接触を試みる。</div></div><div class="relation-card"><div class="relation-name">◆ ハンス・クリスチャン・アンデルセン、ウィリアム・シェイクスピア</div><div class="relation-desc">イベント『ネロ祭再び』で「同じ作家サーヴァント」として共演。</div></div><div class="relation-card"><div class="relation-name">◆ シバの女王</div><div class="relation-desc">カルデア商人会の仲間。</div></div><div class="relation-card"><div class="relation-name">◆ クリストファー・コロンブス</div><div class="relation-desc">カルデア商人会に勧誘し、一度は断られたが後になり向こうから加入した。</div></div><div class="relation-card"><div class="relation-name">◆ 紫式部</div><div class="relation-desc">『ボイス&レター・これくしょん！』にて共演。</div></div><div class="relation-card"><div class="relation-name">◆ アシュヴァッターマン</div><div class="relation-desc">『ナイチンゲールのクリスマス・キャロル』にて共演。</div></div><div class="relation-card"><div class="relation-name">◆ ロムルス＝クィリヌス</div><div class="relation-desc">上記のロムルスの神としての姿。</div></div><div class="relation-card"><div class="relation-name">◆ フェルグス・マック・ロイ</div><div class="relation-desc">期間限定イベント『いざ鎌倉にさよならを』で共演。</div></div><div class="relation-card"><div class="relation-name">◆ ヴァン・ゴッホ</div><div class="relation-desc">彼女の幕間の物語『インタビュー・ウィズ・マイスター』でコロンブスと結託して彼女に（ダ・ヴィンチを装って）インタビューを行い、その内容を纏めた自叙伝を出版して金を得ようと企んでいた。</div></div><div class="relation-card"><div class="relation-name">◆ パーシヴァル</div><div class="relation-desc">彼のマイルーム会話で「浮気はよくない」とやんわりかつ直球に罵倒されている。</div></div><div class="relation-card"><div class="relation-name">◆ コンスタンティノス11世</div><div class="relation-desc">後世におけるローマ帝国最後の「皇帝」。</div></div><div class="relation-card"><div class="relation-name">◆ 千利休</div><div class="relation-desc">互いに口が回る商売上手同士。</div></div><div class="relation-card"><div class="relation-name">◆ ツタンカーメン</div><div class="relation-desc">息子であるカエサリオンと同じく「幼くして死んだファラオ」。</div></div><div class="relation-card"><div class="relation-name">◆ 茨木童子</div><div class="relation-desc">第2部終章にて、子供の扱いについて話題に出た際に彼女を懐柔しにかかった。</div></div><div class="relation-card"><div class="relation-name">◆ クレオパトラ</div><div class="relation-desc">エジプト最後の女王にして、プトレマイオス朝最後の王。</div></div><div class="relation-card"><div class="relation-name">◆ カエサリオン</div><div class="relation-desc">クレオパトラとの間に生まれた息子。後継者争いの結果、勝者のオクタウィアヌス（アウグストゥス）に若くして殺されている。</div></div><div class="relation-card"><div class="relation-name">◆ ポンペイウス</div><div class="relation-desc">ローマの軍人であり政治家。カエサルの娘ユリアの夫であった。ユリアが難産で死ぬと関係が急速に悪化しカエサルと袂を分かつが、ファルサロスの戦いに敗れてエジプトへ脱出するもその直後に暗殺されてしまう。</div></div><div class="relation-card"><div class="relation-name">◆ アントニウス</div><div class="relation-desc">ローマの軍人でカエサルの部下の一人。カエサル暗殺後はオクタウィアヌスと後継者争いを繰り広げる。後にクレオパトラと正式に結婚するが、アクティウムの海戦においてオクタウィアヌスに敗北し自殺。</div></div><div class="relation-card"><div class="relation-name">◆ オクタウィアヌス（アウグストゥス）</div><div class="relation-desc">カエサルの姪の息子（大甥）で、カエサル暗殺後に開封された遺言書にて後継者に指名される（このとき弱冠17歳）。その後の元老院やアントニウスとの政治闘争で抜群の政治力を発揮し、アクティウムの海戦でアントニウスとクレオパトラを破る。その際にアントニウスとクレオパトラを自殺に追いやり、カエサリオンを殺している。</div></div><div class="relation-card"><div class="relation-name">◆ ウェルキンゲトリクス</div><div class="relation-desc">生前、ガリア平定の際に打倒した反乱軍の大将。</div></div><div class="relation-card"><div class="relation-name">◆ ブルータス</div><div class="relation-desc">自身の暗殺に関わった人物。彼に掛けた「ブルータス、お前もか」という言葉は後世で有名になっている。</div></div><div class="relation-card"><div class="relation-name">◆ ダビデ</div><div class="relation-desc">上記のパラケルススと合わせて3人で怪しいダイエット薬の詐欺行為を働いていた。</div></div><div class="relation-card"><div class="relation-name">◆ イスカンダル</div><div class="relation-desc">尊敬する偉人。</div></div></div>
+            </div>
+            <div class="section-block">
+                <div class="section-header">名台词鉴赏</div>
+                <div><div class="quote-box"><div class="quote-text">「私は来た！ 私は見た！ ならば次は勝つだけのこと！ 『黄の死クロケア・モース』！」</div><div class="quote-note">▶ 宝具「黄の死」発動。見敵必殺の黄金の一撃が、彼の有名な言葉「来た、見た、勝った」とともに放たれる。</div></div><div class="quote-box"><div class="quote-text">「──さあ。進め、賽は投げられた」</div><div class="quote-note">▶ 戦闘終了後の台詞。現在にまで残る有名な格言。</div></div><div class="quote-box"><div class="quote-text">「セイバー……セイバー……？ この私がセイバーとは、どういう理由だ？」
+「しかし、だからといって私を前線に置くべきではなかろう」
+「やれやれ。この私に先陣を切れとはな」</div><div class="quote-note">▶ 召喚時・レベルアップ・宝具使用時の台詞。ことあるごとに口から零れる愚痴と不満。もっとも、数度の強化が行われた結果、レア度詐欺と呼んでも差し支えない程の高い攻撃力を獲得しており、前線でも充分通用する。</div></div><div class="quote-box"><div class="quote-text">「忠告するぞマスター。慢心の果てに寝首をかかれんようにな」</div><div class="quote-note">▶ マイルーム会話2。悪意を持っての言葉にも聞こえるが、おそらく生前にて暗殺された自分のような目に遭わないようにと彼なりに忠告している。</div></div><div class="quote-box"><div class="quote-text">「おお、クレオパトラ。今日も麗しく今日も輝いているな、素晴らしい……！ さて……ん？ 何？ ……私の体型をかつてのスラリとしたものへ戻すため、良い方法を思いついた？ ……ハハハ、やめておけやめておけ。私はな、この姿を気に入っているのだクレオパトラ。こうも見事に膨らむ程、お前への愛を蓄えた姿を気に入らずしてなんとする。ハハハハハ……ん？ どうした、急に顔から火を出して」</div><div class="quote-note">▶ マイルーム会話「クレオパトラ」。ダイエットを強制しようとする最愛の女を諌めるため、本気なのか言い訳なのか不明ながら弁舌を発揮し、最終的にデレさせる。</div></div><div class="quote-box"><div class="quote-text">「いいや、その醜い踊りはここで終わる。貴様の逃避はここまでだ。
+　何が将軍だ。何が皇帝の源か。笑止千万だろうが！　
+　貴様は逃避しているだけだ！この、豚が！
+　愛したひとりの女クレオパトラの願いさえ果たせず、愛し子カエサリオンを後継とせなんだ自らから！」</div><div class="quote-note">▶ 自身の幕間の物語「懐かしの勲」にて、「戦場に逃避した」カエサルの影と対峙して。</div></div><div class="quote-box"><div class="quote-text">「黙れ豚め！ その醜さ、我が美しさの前に花弁が如く散れ！」</div><div class="quote-note">▶ 同上。自虐なのか自賛なのかよく分からないこの決め台詞を以て、カエサルの影を吸収したのであった。</div></div><div class="quote-box"><div class="quote-text">「いや聞くだろう、なにあろう、万人が聞き惚れるとも！ この私の、値千金とも言える演説なのだから！」</div><div class="quote-note">▶ 『月女神はお団子の夢を見るか？』より。</div></div></div>
+            </div>
+            <div class="section-block">
+                <div class="section-header">角色考据与幕后 Memo</div>
+                <div class="section-content"><ul style="padding:0;"><li class="memo-item">初代ローマ皇帝はガイウス・オクタウィウス・トゥリヌス（アウグストゥス）だが、オクタウィウスは彼によって後継者に指名され、彼が築いた基礎から帝政を完成させた。そのため彼は事実上の帝政創始者として見られることが多い。また、「カエサル」の名はローマ皇帝の称号の一つとして受け継がれ、「皇帝」を意味する言葉の語源にもなっている。しかし本作のカエサルは「皇帝特権」を持たず、「カリスマ」もC止まりである。帝政どころか共和政以前の「王」は「皇帝特権：EX」なのだが……。</li><li class="memo-item">カエサルの政治指導者としての評価は古代ローマ当時から今日に至るまで、毀誉褒貶が相半ばしている。「共和制のままではいずれ起こるだろう問題に対処できないことを予見し、それに代わる新たな国家像を創造した」という点は紛れも無く天才だが、その急進さ故に腹心に暗殺され、結局内乱を再び引き起こすことになった。</li><li class="memo-item">現在の暦のもととなったユリウス暦を制定している。当時としても現在としても驚くべき精度の暦であり、1582年にて時のローマ教皇グレゴリウス13世によって現行のグレゴリオ暦に改訂された際も「年数が100で割り切れ、かつ400では割り切れない年は閏年ではなく平年とする」というルールをユリウス暦に追加しただけのものであることから。</li><li class="memo-item">カエサルの名言として知られる「賽は投げられた」「来た、見た、勝った」といった言葉にはたびたび言及し、「来た、見た、勝った」に至っては宝具発動時はそれを意識した台詞とともに「来た！ 見た！ 勝った!!」の文字が背後に飛ぶといった演出がなされている。
+なお、大阪にあった某家電販売店は「来た、見た、勝った」をもじった「来た、見た、買うた（買ったの大阪弁）」のキャッチコピーで有名になっており、イベント『月の女神はお団子の夢を見るか？』では主人公の選択肢の中に「来た、見た、買った！ ですよね！」がある。</li><li class="memo-item">この「来た、見た、勝った」であるが、本来は全てカエサルが主語というわけではない。「見た、勝った」のはカエサル、「来た」のは敵兵のゲルマニア人である。</li><li class="memo-item">もう一つ有名な言葉として知られるのが「ブルータス、お前もか」であろう。こちらも期間限定イベントにて「○○よ、おまえもか」とアレンジされ使用された。
+また、2021年には『聖杯戦線 ～ブルータスよ、おまえもか～』というイベントが開催。ついにタイトルにまでなってしまった。</li><li class="memo-item">カエサルは二回離婚を経験しているが、三回目の結婚で迎えたカルプルニアとの関係は良好で終生を共に過ごした。カエサルの浮気性は治らず、政治上の理由から彼女を離縁してポンペイウスの娘と結婚しようと図った時もあったが（ポンペイウス自身に断られた）カルプルニアは正妻として彼を支え続けたという。またカエサルもカルプルニアを他の愛人たちとは別格の存在として扱った。クレオパトラを愛人としてローマに招いた後も、彼女の別荘に入り浸りはしたが決して泊まることはなく、必ずカルプルニアの待つ家に帰ったという。</li><li class="memo-item">愛人クレオパトラとの熱愛関係もあって当時のローマ市民からは「王位につきカエサリオンを後継者にするつもりではないか」「エジプトに国を売るつもりではないか」と疑われており、憎む者も多かったという。
+しかし暗殺後に明かされた遺言書にはクレオパトラやカエサリオンについての言及は一言もなく“オクタウィアヌスに遺産の大半を譲ること”“残りは市民のために用いること”“正妻カルプルニアとの間に子が生まれた場合の後見人”についてのみ書かれていた。ローマを売るつもりなぞ全く無かったのはともかく、カエサリオンを認知する＝カエサルの後継者候補として担ぎだされる可能性が出てくるということなのでそれを防ぎたかったのではないかと言われている。事実オクタウィアヌスはクレオパトラの子供のうちカエサリオンだけは殺させたが、他の子供たち&#91;注 2&#93;は殺すことなく姉のオクタウィアに養育させている。</li><li class="memo-item">自称・太っているのではなくふくよかな体型の彼だが、これで意外と俊敏らしい。ステータス上では敏捷Bとセイバークラスの基本能力通り。
+ゲーム的な面でも、Quickが2枚と他のセイバー（いずれも1枚）より多いコマンドカード構成をしており、宝具もQuickカード（しかもセイバーに稀有な単体攻撃）。動けるDEBUである。</li><li class="memo-item">セイバーであることに度々不満を漏らしているが、史実では若年の亡命時代、軍に身を置いていた時期があり、ある戦場での功績から当時最も名誉あるとされた「市民冠」を授与されている。これは同じローマ市民を救った栄誉とされ、年配の元老院議員すらこれに敬礼する、いわば現代アメリカの「名誉勲章」レベルの名誉。実は彼が被っている月桂冠が"それ"であり、後世ではローマ皇帝の権利の一つとして認められている。ガリア遠征時代、内乱時代でも、ケルト兵相手に尻込みしている部下の盾を奪い取って最前線に躍りでる、アフリカ象の倒し方を自ら新兵にレクチャーする、など、それなりに戦士としての経験はある。もっとも、これはカエサルだけではなく、当時の元老院議員の大半がノブレス・オブリージュを基本精神としていたため。実際、彼の部下の大勢は元老院議員の子息だったりする。元老院議員と軍務が分離され始めるのはもっと後の時代からである。</li><li class="memo-item">『人ならぬ妖精の女と子をなした』とプロフィールに乗っているが、その子というのは様々な作品に登場するかの有名な「妖精王オベロン」の事であろう。彼はカエサルの息子とされ、ウィリアム・シェイクスピアの書いた文学作品にも登場するビッグネームとも言える。
+ちなみにカエサルがオベロンの父であるとされている様に、同時にオベロンにはある有名な存在が母親であるとされている。問題はその母親がFate的には余りにも不穏な名前という点であるのだが、その名前を持つ者はアーサー王伝説では二人いるとされ、同一視もされるが別人として描かれる事もあるのでまだどっちの事を指しているのかは断言できないが、子があのオベロンな事もあり非常に興味深いエピソードといえよう。
+なお、後に『Grand Order』に登場したオベロンはカエサルとの繋がりこそ明言されていないものの、彼同様にとてつもない借金魔だったりする。</li><li class="memo-item">聖槍として知られるロンギヌスの槍の所有者だったという伝説もある。それによればトバル・カインの鍛えた剣と槍が紆余曲折を経てポンペイウスの部下の手に渡り、カエサルへの贈り物とされたという。その後、カエサルはロンギヌスの祖父の戦功を嘉し、褒美としてこの槍を与えた。ロンギヌスは祖父から引き継いだこの槍で、イエス・キリストを刺したという。
+なお、槍と共に手に入れたトバル・カインの剣については、ロンギヌスの祖父への褒美として一緒に渡されたとも、ブルータスに手渡されカエサル暗殺に用いられたとも言われる。</li><li class="memo-item">世界史でも屈指の知名度とローマ帝国の礎を作った功績の割に、『Grand Order』では☆3という低すぎるレア度である。
+「逸話や伝承に対してレア度が見合っていない」という意見はアーラシュやクー・フーリンにも言えるのだが、カエサルの場合はセイバーで召喚される事を嫌っているのでそのせいもあるのかもしれない。仮に将軍や文筆家として別クラスで実装されれば☆4以上への昇格も有り得るか。</li></ul></div>
+            </div>
+        </div>
+
+        <div class="tab-panel" id="panel-interlude">
+            <div class="stats-grid">
+                <div><div class="stat-k">筋力</div><div class="stat-v">A</div></div>
+                <div><div class="stat-k">耐久</div><div class="stat-v">B</div></div>
+                <div><div class="stat-k">敏捷</div><div class="stat-v">B</div></div>
+                <div><div class="stat-k">魔力</div><div class="stat-v">D</div></div>
+                <div><div class="stat-k">幸运</div><div class="stat-v">C</div></div>
+                <div><div class="stat-k">宝具</div><div class="stat-v">B+</div></div>
+            </div>
+            <div class="section-block">
+                <div class="section-header">专属幕间物语</div>
+                <div class="section-content"><div style="color:#9e9185;font-size:12px;">当前版本无独立幕间关卡</div></div>
+            </div>
+            <div class="section-block">
+                <div class="section-header">官方羁绊档案 (Bond 1~6)</div>
+                <div><div class="bond-item"><div class="bond-title">◆ 资料</div><div class="bond-text">古代ローマ最大の英雄のひとり。
+ガリア戦争やブリタニア遠征などで名を馳せた
+将軍にして優れた統治者。英語名はシーザー。
+女神ヴィーナスの末裔にして、人ならぬ妖精
+との間にも子を成したと言われる色男。</div></div><div class="bond-item"><div class="bond-title">◆ 资料</div><div class="bond-text">身長／体重：168cm・154kg
+出典：史実
+地域：欧州
+属性：中立・中庸　　副属性：人　　性別：男性
+同じような言葉を三度続ける癖がある。</div></div><div class="bond-item"><div class="bond-title">◆ 资料</div><div class="bond-text">食えない男。野心家で、権謀術数に長ける。
+大きな野望と恐るべき知性を備えた男であり、
+知略と弁舌の名手。扇動の天才。
+数多の戦場を勝利に導いた優秀な頭脳は
+軍略スキルの高ランク保持として現れている。</div></div><div class="bond-item"><div class="bond-title">◆ 资料</div><div class="bond-text">○扇動：ＥＸ
+カエサルの固有スキル。
+数多の大衆・市民を導く言葉や身振りの習得。
+特に個人に対して使用した場合には、ある種の
+精神攻撃として働く。きわめて強力。</div></div><div class="bond-item"><div class="bond-title">◆ 资料</div><div class="bond-text">『黄の死』
+ランク：Ｂ＋　種別：対人宝具
+クロケア・モース。黄金の剣。
+こと近接戦闘に於いてはまさしく見敵必勝の
+威力を有するが、本人は剣を抜きたがらない。</div></div><div class="bond-item"><div class="bond-title">◆ 资料</div><div class="bond-text">女好き。ローマも好き当然ネロのことも好き。
+世界が好き。クレオパトラのことも好き。
+マスターに対しては不敵な言動を示すが、
+基本的には裏切ることはない。嫌味混じりに
+述べる言葉も、本心からの忠告。</div></div><div class="bond-item"><div class="bond-title">◆ 资料</div><div class="bond-text">聖杯への願いは「クレオパトラと再会して、
+彼女と息子カエサリオンを認知する」事である。
+もう陰謀とかいいから。息子抱かせて、息子。</div></div></div>
+            </div>
+        </div>
+
+        <div class="tab-panel" id="panel-voice">
+            <div style="font-size:11.5px;color:var(--tm-text-sub);margin-bottom:6px;">❖ 点击条目在线聆听官方原版日配</div>
+            <div><div style="color:#9e9185;font-size:12px;">暂无公开音频资产</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ascs = ["https://static.atlasacademy.io/JP/CharaGraph/101300/101300a@1.png", "https://static.atlasacademy.io/JP/CharaGraph/101300/101300a@2.png", "https://static.atlasacademy.io/JP/CharaGraph/101300/101300b@1.png", "https://static.atlasacademy.io/JP/CharaGraph/101300/101300b@2.png"];
+    let curAudio = null;
+
+    function setAsc(idx) {
+        document.querySelectorAll('.asc-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+        const img = document.getElementById('hero-art');
+        if (ascs[idx]) {
+            img.style.opacity = '0.2';
+            img.src = ascs[idx];
+            img.onload = () => { img.style.opacity = '1'; };
+        }
+    }
+
+    function switchTab(k, el) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('panel-' + k).classList.add('active');
+    }
+
+    function playAudio(url) {
+        if (curAudio) { curAudio.pause(); curAudio = null; }
+        curAudio = new Audio(url);
+        curAudio.play();
+    }
+</script>
+</body>
+</html>
