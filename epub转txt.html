@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPUB 原生目录解析与智能分卷工作台</title>
+    <!-- 引入 JSZip 纯前端解包/打包 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 35px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1080px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 顶部 Header */
+        .header { text-align: center; }
+        .header h1 { font-size: 1.8rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        .header p { color: var(--text-muted); font-size: 0.95rem; margin-top: 6px; }
+
+        /* 上传区域 */
+        .upload-card {
+            background: var(--card-bg);
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--radius);
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .upload-card:hover { border-color: var(--primary); background: var(--primary-light); }
+        .upload-card input { display: none; }
+        .upload-icon { font-size: 38px; margin-bottom: 8px; }
+
+        /* 卡片基础样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+
+        /* 状态与统计栏 */
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        .badge {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .badge-success { background: #dcfce7; color: #15803d; }
+
+        /* 工作区栅格 */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 860px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+        }
+
+        .panel-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 章节目录滚动区（具备相对定位以承载悬浮条） */
+        .chapter-panel-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .chapter-scroll-box {
+            max-height: 520px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fafafa;
+            padding: 6px;
+            user-select: none; /* 防止双击拖动时选中文本干扰 Shift 点击 */
+        }
+        .chapter-scroll-box::-webkit-scrollbar { width: 5px; }
+        .chapter-scroll-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        .chapter-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: #ffffff;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .chapter-item:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+        /* 选中态高亮 */
+        .chapter-item.selected {
+            background: #eef2ff !important;
+            border-color: var(--primary) !important;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        .chapter-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 215px;
+        }
+        .chapter-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* 悬浮框选操作条 (Floating Dock) */
+        .selection-dock {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25);
+            animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 10;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .selection-dock-info {
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .selection-dock-info b { color: #38bdf8; }
+
+        /* 模式选择 Tab */
+        .mode-tabs {
+            display: flex;
+            gap: 6px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+
+        /* 分割面板内容 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 分卷配置 */
+        .range-builder { display: flex; flex-direction: column; gap: 10px; }
+        .range-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .range-row input[type="text"] {
+            flex: 1.2;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            min-width: 80px;
+        }
+        .range-inputs {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .range-inputs input[type="number"] {
+            width: 65px;
+            padding: 7px 4px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .preset-config-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+        .form-row input[type="number"] {
+            width: 110px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* 通用按钮 */
+        .btn-icon {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .btn-icon:hover { background: #e2e8f0; color: var(--text-main); }
+        .btn-icon.del:hover { background: #fee2e2; color: var(--danger); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; }
+
+        .action-footer {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .action-footer .btn { flex: 1; }
+
+        /* 阅读器预览弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            padding: 20px;
+        }
+        .modal-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 760px;
+            height: 82vh;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-content-area {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            line-height: 1.8;
+            font-size: 15px;
+            color: #334155;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #fdfdfd;
+        }
+        .hint-text { font-size: 0.8rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h1>EPUB 智能解析与精准分卷工作台</h1>
+        <p>按住 Shift 快捷框选范围 · 支持原生目录跳转 (TOC) · 智能续接</p>
+    </div>
+
+    <!-- 上传卡片 -->
+    <div class="upload-card" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📚</div>
+        <h3 id="uploadTip">点击或拖拽 EPUB / TXT 小说文件至此</h3>
+        <p class="hint-text" style="margin-top:4px;">纯浏览器内存解析 · 秒级处理 · 零隐私泄露</p>
+        <input type="file" id="fileInput" accept=".epub,.txt">
+    </div>
+
+    <!-- 主工作区 -->
+    <div class="card" id="workspace" style="display: none;">
+        <div class="meta-bar">
+            <div>
+                <h2 id="bookTitle" style="font-size: 1.15rem; font-weight:700;">未命名作品</h2>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="badge badge-success" id="indexMethodBadge">EPUB 原生目录 (TOC)</span>
+                <span class="badge" id="totalChaptersBadge">0 章</span>
+                <span class="badge" id="totalWordsBadge">0 字</span>
+            </div>
+        </div>
+
+        <div class="workspace-grid">
+            <!-- 左侧：章节树列表 (支持 Shift 框选) -->
+            <div class="chapter-panel-wrapper">
+                <div class="panel-title">
+                    <span>章节目录索引</span>
+                    <span class="hint-text">按住 Shift 可范围框选</span>
+                </div>
+                <div class="chapter-scroll-box" id="chapterListContainer"></div>
+
+                <!-- 框选操作浮动胶囊 -->
+                <div class="selection-dock" id="selectionDock" style="display: none;">
+                    <div class="selection-dock-info">
+                        <span id="dockRangeText">已选第 1 ~ 49 章</span>
+                        <span style="font-size:0.7rem; color:#94a3b8;" id="dockCountText">共 49 个章节</span>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-primary btn-sm" onclick="applySelectionToRange()">✨ 设为新分卷</button>
+                        <button class="btn btn-outline btn-sm" style="color:white; border-color:#475569; background:transparent;" onclick="clearSelection()" title="取消选择">✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：多功能分割配置 -->
+            <div>
+                <!-- 分割模式 Tab 切换 -->
+                <div class="mode-tabs">
+                    <button class="tab-btn active" id="tab-btn-event" onclick="switchMode('event')">事件分卷组合</button>
+                    <button class="tab-btn" id="tab-btn-fixed" onclick="switchMode('fixed')">按固定章节数</button>
+                    <button class="tab-btn" id="tab-btn-single" onclick="switchMode('single')">单章独立导出</button>
+                    <button class="tab-btn" id="tab-btn-words" onclick="switchMode('words')">按目标字数</button>
+                </div>
+
+                <!-- 模式 1：事件分卷（智能推导） -->
+                <div class="tab-content active" id="mode-event">
+                    <div class="range-builder" id="rangeListContainer"></div>
+                    <button class="btn btn-outline" style="width: 100%; margin-top: 10px; border-style: dashed;" onclick="addNextRangeRow()">
+                        ➕ 添加下一卷 (自动递增续接)
+                    </button>
+                    <div class="hint-text" style="margin-top: 8px;">💡 在左边按住 Shift 点选章节，点击底部的「设为新分卷」可直接填充此处。</div>
+                </div>
+
+                <!-- 模式 2：固定章数 -->
+                <div class="tab-content" id="mode-fixed">
+                    <div class="preset-config-box">
+                        <div class="form-row">
+                            <span>每隔</span>
+                            <input type="number" id="fixedChapterStep" value="50" min="1">
+                            <span>章合并为一个文件</span>
+                        </div>
+                        <div class="hint-text" id="fixedPreviewHint">预计将切分为 0 个文件</div>
+                    </div>
+                </div>
+
+                <!-- 模式 3：单章独立导出 -->
+                <div class="tab-content" id="mode-single">
+                    <div class="preset-config-box">
+                        <p style="font-size:0.9rem; font-weight:600;">一章一文件全量独立导出</p>
+                        <p class="hint-text">将为每个章节单独建立 .txt 文件（如：<code>001_第一章.txt</code>），适合音频播放器或掌阅按章检索。</p>
+                    </div>
+                </div>
+
+                <!-- 模式 4：固定字数 -->
+                <div class="tab-content" id="mode-words">
+                    <div class="preset-config-box">
+                        <div class="form-row">
+                            <span>单个分卷字数上限：</span>
+                            <input type="number" id="wordChunkLimit" value="100000" min="5000" step="10000">
+                            <span>字</span>
+                        </div>
+                        <div class="hint-text">智能断句保护：将在字数阈值附近的自然段落换行处分割，避免腰斩句子。</div>
+                    </div>
+                </div>
+
+                <!-- 导出行动栏 -->
+                <div class="action-footer">
+                    <button class="btn btn-primary" onclick="executeCurrentExport()">📦 执行当前分割并下载 ZIP</button>
+                    <button class="btn btn-outline" onclick="exportFullTxt()">📄 导出整本完整 TXT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 沉浸式阅读预览弹窗 -->
+<div class="modal-overlay" id="previewModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div>
+                <h3 id="modalTitle" style="font-size: 1.05rem;">章节预览</h3>
+                <span id="modalMeta" class="hint-text">字数统计</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-icon" onclick="copyModalContent()" title="复制全文">📋</button>
+                <button class="btn-icon del" onclick="closeModal()" title="关闭 (ESC)">✕</button>
+            </div>
+        </div>
+        <div class="modal-content-area" id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+    let chapters = []; // [{ index: 1, title: '第1章', content: '...' }]
+    let baseFileName = "Novel";
+    let activeMode = 'event';
+
+    // 框选记录
+    let lastAnchorIndex = null;
+    let selectedRange = { start: null, end: null };
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const workspace = document.getElementById('workspace');
+
+    // 拖拽与上传监听
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--primary)'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#cbd5e1'; });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#cbd5e1';
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+        baseFileName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        document.getElementById('uploadTip').innerText = `已载入: ${file.name}`;
+        chapters = [];
+        clearSelection();
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'epub') parseEpubWithNativeToc(file);
+        else if (ext === 'txt') parseTxt(file);
+        else alert('仅支持 .epub 或 .txt 文件！');
+    }
+
+    function switchMode(mode) {
+        activeMode = mode;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        document.getElementById(`tab-btn-${mode}`).classList.add('active');
+        document.getElementById(`mode-${mode}`).classList.add('active');
+        updateFixedPreviewHint();
+    }
+
+    // 纯净文本清洗
+    function htmlToCleanText(htmlStr) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlStr, 'text/html');
+        doc.querySelectorAll('script, style, noscript').forEach(el => el.remove());
+        doc.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, tr, li').forEach(el => {
+            el.after(document.createTextNode('\n'));
+        });
+        let text = doc.body.textContent || "";
+        return text
+            .replace(/\u00a0/g, ' ')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(/\n\s*\n\s*\n+/g, '\n\n')
+            .trim();
+    }
+
+    function resolvePath(base, relative) {
+        if (!base) return relative;
+        const stack = base.split('/');
+        stack.pop();
+        const parts = relative.split('/');
+        for (let p of parts) {
+            if (p === '.') continue;
+            if (p === '..') stack.pop();
+            else stack.push(p);
+        }
+        return stack.join('/');
+    }
+
+    // EPUB 原生 TOC/跳转导航解析
+    async function parseEpubWithNativeToc(file) {
+        try {
+            const zip = await JSZip.loadAsync(file);
+            const containerXml = await zip.file("META-INF/container.xml")?.async("string");
+            if (!containerXml) throw new Error("无效 EPUB：找不到 container.xml");
+
+            const parser = new DOMParser();
+            const containerDoc = parser.parseFromString(containerXml, "text/xml");
+            const opfPath = containerDoc.querySelector("rootfile").getAttribute("full-path");
+            const opfXml = await zip.file(opfPath).async("string");
+            const opfDoc = parser.parseFromString(opfXml, "text/xml");
+
+            const manifest = {};
+            opfDoc.querySelectorAll("manifest > item").forEach(item => {
+                manifest[item.getAttribute("id")] = {
+                    href: item.getAttribute("href"),
+                    props: item.getAttribute("properties") || "",
+                    type: item.getAttribute("media-type") || ""
+                };
+            });
+
+            let tocHref = null;
+            let isEpub3Nav = false;
+
+            for (let id in manifest) {
+                if (manifest[id].props.includes('nav')) {
+                    tocHref = manifest[id].href;
+                    isEpub3Nav = true;
+                    break;
+                }
+            }
+
+            if (!tocHref) {
+                const spineTocId = opfDoc.querySelector("spine")?.getAttribute("toc");
+                if (spineTocId && manifest[spineTocId]) {
+                    tocHref = manifest[spineTocId].href;
+                } else {
+                    for (let id in manifest) {
+                        if (manifest[id].type === 'application/x-dtbncx+xml') {
+                            tocHref = manifest[id].href;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            let tocList = [];
+            if (tocHref) {
+                const resolvedTocPath = decodeURI(resolvePath(opfPath, tocHref));
+                const tocContent = await zip.file(resolvedTocPath)?.async("string");
+                if (tocContent) {
+                    const tocDoc = parser.parseFromString(tocContent, isEpub3Nav ? "text/html" : "text/xml");
+                    if (isEpub3Nav) {
+                        const navEl = tocDoc.querySelector('nav[epub\\:type="toc"], nav');
+                        if (navEl) {
+                            navEl.querySelectorAll('a').forEach(a => {
+                                const title = a.textContent.trim();
+                                const href = a.getAttribute('href');
+                                if (title && href) {
+                                    const [relFile, anchor] = href.split('#');
+                                    tocList.push({
+                                        title: title.replace(/\s+/g, ' '),
+                                        fullPath: decodeURI(resolvePath(resolvedTocPath, relFile)),
+                                        anchor: anchor || null
+                                    });
+                                }
+                            });
+                        }
+                    } else {
+                        tocDoc.querySelectorAll('navPoint').forEach(np => {
+                            const title = np.querySelector('navLabel > text')?.textContent?.trim();
+                            const src = np.querySelector('content')?.getAttribute('src');
+                            if (title && src) {
+                                const [relFile, anchor] = src.split('#');
+                                tocList.push({
+                                    title: title.replace(/\s+/g, ' '),
+                                    fullPath: decodeURI(resolvePath(resolvedTocPath, relFile)),
+                                    anchor: anchor || null
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+
+            if (tocList.length >= 2) {
+                document.getElementById('indexMethodBadge').innerText = "EPUB 原生目录 (TOC)";
+                document.getElementById('indexMethodBadge').className = "badge badge-success";
+                await extractByNativeToc(zip, tocList);
+            } else {
+                document.getElementById('indexMethodBadge').innerText = "智能正文切分 (Spine)";
+                document.getElementById('indexMethodBadge').className = "badge";
+                await extractBySpine(zip, opfDoc, opfPath, manifest);
+            }
+
+            renderWorkspace();
+        } catch (err) {
+            alert("EPUB 解析失败: " + err.message);
+            console.error(err);
+        }
+    }
+
+    async function extractByNativeToc(zip, tocList) {
+        const fileGroupMap = new Map();
+        tocList.forEach((item, idx) => {
+            if (!fileGroupMap.has(item.fullPath)) fileGroupMap.set(item.fullPath, []);
+            fileGroupMap.get(item.fullPath).push({ ...item, tocIdx: idx });
+        });
+
+        const tempResults = [];
+        for (let [filePath, items] of fileGroupMap.entries()) {
+            const fileEntry = zip.file(filePath);
+            if (!fileEntry) continue;
+
+            const html = await fileEntry.async("string");
+            if (items.length === 1 && !items[0].anchor) {
+                const clean = htmlToCleanText(html);
+                if (clean.length > 5) {
+                    tempResults.push({ order: items[0].tocIdx, title: items[0].title, content: clean });
+                }
+            } else {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                items.forEach(it => {
+                    if (it.anchor) {
+                        const target = doc.getElementById(it.anchor) || doc.querySelector(`[name="${it.anchor}"]`);
+                        if (target) {
+                            const marker = doc.createTextNode(`###CHAPTER_ANCHOR_SPLIT_${it.tocIdx}###`);
+                            target.parentNode.insertBefore(marker, target);
+                        }
+                    }
+                });
+
+                const rawClean = htmlToCleanText(doc.body.innerHTML);
+                items.forEach((it, i) => {
+                    const token = `###CHAPTER_ANCHOR_SPLIT_${it.tocIdx}###`;
+                    let contentPiece = "";
+                    if (rawClean.includes(token)) {
+                        const nextToken = (i + 1 < items.length) ? `###CHAPTER_ANCHOR_SPLIT_${items[i+1].tocIdx}###` : null;
+                        const start = rawClean.indexOf(token) + token.length;
+                        const end = nextToken && rawClean.includes(nextToken) ? rawClean.indexOf(nextToken) : rawClean.length;
+                        contentPiece = rawClean.substring(start, end).trim();
+                    } else if (i === 0) {
+                        contentPiece = rawClean.split('###CHAPTER_ANCHOR_SPLIT_')[0].trim();
+                    }
+                    if (contentPiece.length > 5) {
+                        tempResults.push({ order: it.tocIdx, title: it.title, content: contentPiece });
+                    }
+                });
+            }
+        }
+        tempResults.sort((a, b) => a.order - b.order);
+        chapters = tempResults.map((item, idx) => ({
+            index: idx + 1,
+            title: item.title,
+            content: item.content
+        }));
+    }
+
+    async function extractBySpine(zip, opfDoc, opfPath, manifest) {
+        const spineItems = Array.from(opfDoc.querySelectorAll("spine > itemref")).map(item => manifest[item.getAttribute("idref")]?.href);
+        let gIdx = 1;
+        for (let rel of spineItems) {
+            if (!rel) continue;
+            const full = decodeURI(resolvePath(opfPath, rel));
+            const entry = zip.file(full);
+            if (!entry) continue;
+            const clean = htmlToCleanText(await entry.async("string"));
+            if (clean.length < 15) continue;
+            const firstLine = clean.split('\n')[0].substring(0, 35).trim();
+            chapters.push({ index: gIdx, title: firstLine || `第 ${gIdx} 节`, content: clean });
+            gIdx++;
+        }
+    }
+
+    function parseTxt(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            const reg = /(?<=\n)(?=(?:第[0-9一二三四五六七八九十百千万]+[章卷回节]|[C|c]hapter\s*\d+))/g;
+            const pieces = text.split(reg);
+            chapters = pieces.filter(p => p.trim().length > 0).map((content, idx) => {
+                const firstLine = content.trim().split('\n')[0].substring(0, 30).trim();
+                return { index: idx + 1, title: firstLine || `第 ${idx + 1} 章`, content: content.trim() };
+            });
+            document.getElementById('indexMethodBadge').innerText = "TXT 章节正则匹配";
+            document.getElementById('indexMethodBadge').className = "badge";
+            renderWorkspace();
+        };
+        reader.readAsText(file, 'utf-8');
+    }
+
+    // 渲染整体工作台
+    function renderWorkspace() {
+        workspace.style.display = 'block';
+        document.getElementById('bookTitle').innerText = baseFileName;
+        document.getElementById('totalChaptersBadge').innerText = `共 ${chapters.length} 章`;
+        const totalWords = chapters.reduce((acc, cur) => acc + cur.content.length, 0);
+        document.getElementById('totalWordsBadge').innerText = `约 ${(totalWords / 10000).toFixed(1)} 万字`;
+
+        renderChapterList();
+        initDefaultRanges();
+        updateFixedPreviewHint();
+    }
+
+    // 渲染左侧章节列表
+    function renderChapterList() {
+        const container = document.getElementById('chapterListContainer');
+        container.innerHTML = "";
+        chapters.forEach((ch, idx) => {
+            const div = document.createElement('div');
+            div.className = 'chapter-item';
+            div.id = `chapter-item-${ch.index}`;
+            // 绑定点击事件，处理单选与 Shift 连选
+            div.onclick = (e) => handleChapterClick(e, ch.index);
+
+            div.innerHTML = `
+                <div class="chapter-name" title="${ch.title}"><b>${ch.index}.</b> ${ch.title}</div>
+                <div class="chapter-meta">
+                    <span>${ch.content.length}字</span>
+                    <span class="btn-icon" onclick="previewContent('${ch.title}', '第 ${ch.index} 章 · ${ch.content.length} 字', chapters[${idx}].content); event.stopPropagation();" title="预览正文">👁️</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // --- 核心新增：Shift 框选核心逻辑 ---
+    function handleChapterClick(e, index) {
+        if (e.shiftKey && lastAnchorIndex !== null) {
+            // Shift + 点击：范围框选
+            const start = Math.min(lastAnchorIndex, index);
+            const end = Math.max(lastAnchorIndex, index);
+            setSelectionRange(start, end);
+        } else {
+            // 普通点击：重置为起点锚点
+            lastAnchorIndex = index;
+            setSelectionRange(index, index);
+        }
+    }
+
+    function setSelectionRange(start, end) {
+        selectedRange = { start, end };
+        const totalSelected = end - start + 1;
+
+        // 更新 DOM 样式高亮
+        document.querySelectorAll('.chapter-item').forEach(el => el.classList.remove('selected'));
+        for (let i = start; i <= end; i++) {
+            const el = document.getElementById(`chapter-item-${i}`);
+            if (el) el.classList.add('selected');
+        }
+
+        // 显示浮动操作条 (选了 1 个或多个都展示)
+        const dock = document.getElementById('selectionDock');
+        dock.style.display = 'flex';
+        document.getElementById('dockRangeText').innerHTML = `已框选 <b>第 ${start} ~ ${end} 章</b>`;
+        document.getElementById('dockCountText').innerText = `涵盖 ${totalSelected} 个连续章节`;
+    }
+
+    function clearSelection() {
+        selectedRange = { start: null, end: null };
+        lastAnchorIndex = null;
+        document.querySelectorAll('.chapter-item').forEach(el => el.classList.remove('selected'));
+        document.getElementById('selectionDock').style.display = 'none';
+    }
+
+    // 一键将框选区域生成为新分卷
+    function applySelectionToRange() {
+        if (!selectedRange.start || !selectedRange.end) return;
+
+        // 确保右侧处于“事件分卷组合”模式
+        switchMode('event');
+
+        const container = document.getElementById('rangeListContainer');
+        const rows = container.querySelectorAll('.range-row');
+        const volNum = rows.length + 1;
+
+        // 添加该分卷行
+        addRangeRowDirect(selectedRange.start, selectedRange.end, `第${volNum}卷`);
+
+        // 成功反馈并滚动到底部
+        const lastRow = container.lastElementChild;
+        lastRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        lastRow.style.borderColor = 'var(--primary)';
+        setTimeout(() => lastRow.style.borderColor = 'var(--border)', 1000);
+
+        // 重设起点锚点为 end + 1，方便下次直接继续顺着连选
+        lastAnchorIndex = Math.min(selectedRange.end + 1, chapters.length);
+        clearSelection();
+    }
+
+    // --- 分卷行管理 ---
+    function initDefaultRanges() {
+        const container = document.getElementById('rangeListContainer');
+        container.innerHTML = "";
+        if (chapters.length === 0) return;
+        addRangeRowDirect(1, Math.min(50, chapters.length), `第一卷`);
+    }
+
+    function addNextRangeRow() {
+        const container = document.getElementById('rangeListContainer');
+        const rows = container.querySelectorAll('.range-row');
+        let nextStart = 1;
+        if (rows.length > 0) {
+            const lastEndVal = parseInt(rows[rows.length - 1].querySelector('.input-end').value) || 0;
+            nextStart = lastEndVal + 1;
+        }
+
+        if (nextStart > chapters.length) {
+            alert("分卷区间已覆盖完全部章节！");
+            return;
+        }
+
+        const nextEnd = Math.min(nextStart + 49, chapters.length);
+        addRangeRowDirect(nextStart, nextEnd, `第${rows.length + 1}卷`);
+    }
+
+    function addRangeRowDirect(start, end, title) {
+        const container = document.getElementById('rangeListContainer');
+        const row = document.createElement('div');
+        row.className = 'range-row';
+        row.innerHTML = `
+            <input type="text" class="input-title" value="${title}">
+            <div class="range-inputs">
+                第 <input type="number" class="input-start" value="${start}" min="1" max="${chapters.length}" onchange="syncRanges(this)"> 章
+                至 <input type="number" class="input-end" value="${end}" min="1" max="${chapters.length}" onchange="syncRanges(this)"> 章
+            </div>
+            <button class="btn-icon" onclick="previewRange(this)" title="预览此卷合并内容">👁️</button>
+            <button class="btn-icon del" onclick="this.closest('.range-row').remove()" title="删除此卷">✕</button>
+        `;
+        container.appendChild(row);
+    }
+
+    function syncRanges(elem) {
+        const row = elem.closest('.range-row');
+        const rows = Array.from(document.getElementById('rangeListContainer').querySelectorAll('.range-row'));
+        const index = rows.indexOf(row);
+        if (elem.classList.contains('input-end') && index !== -1 && index < rows.length - 1) {
+            const currentEnd = parseInt(elem.value) || 0;
+            rows[index + 1].querySelector('.input-start').value = currentEnd + 1;
+        }
+    }
+
+    // 固定步长提示
+    document.getElementById('fixedChapterStep').addEventListener('input', updateFixedPreviewHint);
+    function updateFixedPreviewHint() {
+        const step = parseInt(document.getElementById('fixedChapterStep').value) || 1;
+        const total = chapters.length;
+        const count = Math.ceil(total / step);
+        document.getElementById('fixedPreviewHint').innerText = `每卷 ${step} 章，总计将切分为 ${count} 个独立 TXT 文本。`;
+    }
+
+    // --- 导出逻辑 ---
+    async function executeCurrentExport() {
+        const zip = new JSZip();
+
+        if (activeMode === 'event') {
+            const rows = document.querySelectorAll('.range-row');
+            if (rows.length === 0) { alert("请先添加分卷区间！"); return; }
+            rows.forEach((row, i) => {
+                const title = row.querySelector('.input-title').value.trim() || `第${i+1}卷`;
+                const s = parseInt(row.querySelector('.input-start').value) || 1;
+                const e = parseInt(row.querySelector('.input-end').value) || chapters.length;
+                const slice = chapters.filter(c => c.index >= s && c.index <= e);
+                const text = slice.map(c => `### ${c.title}\n\n${c.content}`).join('\n\n\n');
+                zip.file(`${String(i+1).padStart(2,'0')}_${title}(${s}-${e}章).txt`, text);
+            });
+        } 
+        else if (activeMode === 'fixed') {
+            const step = parseInt(document.getElementById('fixedChapterStep').value) || 50;
+            let fileIndex = 1;
+            for (let i = 0; i < chapters.length; i += step) {
+                const slice = chapters.slice(i, i + step);
+                const s = slice[0].index;
+                const e = slice[slice.length - 1].index;
+                const text = slice.map(c => `### ${c.title}\n\n${c.content}`).join('\n\n\n');
+                zip.file(`${String(fileIndex).padStart(2,'0')}_第${s}-${e}章.txt`, text);
+                fileIndex++;
+            }
+        } 
+        else if (activeMode === 'single') {
+            chapters.forEach(c => {
+                const safeName = c.title.replace(/[\\\/:*?"<>|]/g, '').trim();
+                zip.file(`${String(c.index).padStart(3, '0')}_${safeName}.txt`, `${c.title}\n\n${c.content}`);
+            });
+        } 
+        else if (activeMode === 'words') {
+            const limit = parseInt(document.getElementById('wordChunkLimit').value) || 100000;
+            let currentChunk = [];
+            let currentLen = 0;
+            let fileIdx = 1;
+
+            chapters.forEach((c) => {
+                currentChunk.push(c);
+                currentLen += c.content.length;
+                if (currentLen >= limit) {
+                    const s = currentChunk[0].index;
+                    const e = currentChunk[currentChunk.length - 1].index;
+                    const text = currentChunk.map(ch => `### ${ch.title}\n\n${ch.content}`).join('\n\n\n');
+                    zip.file(`Part_${String(fileIdx).padStart(2,'0')}(${s}-${e}章_约${currentLen}字).txt`, text);
+                    fileIdx++;
+                    currentChunk = [];
+                    currentLen = 0;
+                }
+            });
+            if (currentChunk.length > 0) {
+                const s = currentChunk[0].index;
+                const e = currentChunk[currentChunk.length - 1].index;
+                const text = currentChunk.map(ch => `### ${ch.title}\n\n${ch.content}`).join('\n\n\n');
+                zip.file(`Part_${String(fileIdx).padStart(2,'0')}(${s}-${e}章_约${currentLen}字).txt`, text);
+            }
+        }
+
+        const blob = await zip.generateAsync({ type: "blob" });
+        downloadBlob(blob, `${baseFileName}_分割合集.zip`);
+    }
+
+    function previewRange(btn) {
+        const row = btn.closest('.range-row');
+        const title = row.querySelector('.input-title').value || "分卷预览";
+        const s = parseInt(row.querySelector('.input-start').value) || 1;
+        const e = parseInt(row.querySelector('.input-end').value) || chapters.length;
+        const slice = chapters.filter(c => c.index >= s && c.index <= e);
+        const text = slice.map(c => `=== ${c.title} ===\n\n${c.content}`).join('\n\n\n');
+        previewContent(`分卷预览：${title}`, `涵盖第 ${s} 至 ${e} 章 (共 ${slice.length} 章 · 合计约 ${text.length} 字)`, text);
+    }
+
+    function previewContent(title, meta, text) {
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalMeta').innerText = meta;
+        const body = document.getElementById('modalBody');
+        body.innerText = text;
+        body.scrollTop = 0;
+        document.getElementById('previewModal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('previewModal').style.display = 'none'; }
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    function copyModalContent() {
+        navigator.clipboard.writeText(document.getElementById('modalBody').innerText).then(() => alert("预览全文已复制到剪贴板！"));
+    }
+
+    function exportFullTxt() {
+        const full = chapters.map(c => `${c.title}\n\n${c.content}`).join('\n\n\n');
+        downloadBlob(new Blob([full], { type: "text/plain;charset=utf-8" }), `${baseFileName}_完整纯净版.txt`);
+    }
+
+    function downloadBlob(blob, filename) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
